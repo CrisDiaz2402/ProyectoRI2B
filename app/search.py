@@ -1,60 +1,37 @@
-# app/search.py
 import streamlit as st
 from PIL import Image
-import numpy as np
-import os
 from app.vectorizer import vectorize_text, vectorize_image
-from app.utils import buscar_similares
+from app.utils import buscar_similares, get_original_path, clasificar_resultados_por_tipo
+from langdetect import detect
+from deep_translator import GoogleTranslator
+import os
 
 def mostrar_resultado(nombre_vector):
-    base_dirs = {
-        "frames": "data/processed/frames",
-        "images_crawled": "data/raw/crawled",
-        "images_flickr": "data/raw/flickr",
-        "texts": "data/processed/transcripts",
-        "texts_raw": "data/raw/texto"
-    }
+    ruta = get_original_path(nombre_vector)
 
-    if nombre_vector.startswith("video"):
-        # Buscar imagen de frame
-        partes = nombre_vector.split("_")
-        video = partes[0]
-        frame = "_".join(partes[1:])
-        for carpeta in os.listdir(base_dirs["frames"]):
-            frame_path = os.path.join(base_dirs["frames"], carpeta, frame + ".jpg")
-            if os.path.exists(frame_path):
-                st.image(Image.open(frame_path), caption=nombre_vector)
-                return
-
-    elif nombre_vector.startswith("gatos") or nombre_vector.startswith("images_crawled"):
-        nombre_archivo = nombre_vector + ".jpg"
-        path = os.path.join(base_dirs["images_crawled"], nombre_archivo)
-        if os.path.exists(path):
-            st.image(Image.open(path), caption=nombre_vector)
-            return
-
-    elif nombre_vector.startswith("100") or "flickr" in nombre_vector:
-        nombre_archivo = nombre_vector + ".jpg"
-        path = os.path.join(base_dirs["images_flickr"], nombre_archivo)
-        if os.path.exists(path):
-            st.image(Image.open(path), caption=nombre_vector)
-            return
-
-    elif os.path.exists(os.path.join(base_dirs["texts"], nombre_vector + ".txt")):
-        path = os.path.join(base_dirs["texts"], nombre_vector + ".txt")
-        with open(path, "r", encoding="utf-8") as f:
-            contenido = f.read()
-        st.markdown(f"**Texto encontrado:**\n\n{contenido}")
+    if not ruta or not os.path.exists(ruta):
+        st.warning(f"No se encontró el archivo original para: {nombre_vector}")
         return
 
-    elif os.path.exists(os.path.join(base_dirs["texts_raw"], nombre_vector + ".txt")):
-        path = os.path.join(base_dirs["texts_raw"], nombre_vector + ".txt")
-        with open(path, "r", encoding="utf-8") as f:
-            contenido = f.read()
-        st.markdown(f"**Texto encontrado:**\n\n{contenido}")
-        return
+    ruta = ruta.replace("\\", "/")
+    st.markdown(f"🔗 **Archivo original:** `{ruta}`")
 
-    st.warning(f"No se puede mostrar el resultado: {nombre_vector}")
+    if ruta.endswith((".jpg", ".jpeg", ".png")):
+        st.image(Image.open(ruta), caption=nombre_vector, use_column_width=True)
+
+    elif ruta.endswith(".txt"):
+        with open(ruta, "r", encoding="utf-8") as f:
+            contenido = f.read()
+        st.markdown(f"**Texto encontrado:**\n\n```\n{contenido}\n```")
+
+    elif ruta.endswith((".mp4", ".webm")):
+        st.video(ruta)
+
+    elif ruta.endswith((".mp3", ".wav")):
+        st.audio(ruta)
+
+    else:
+        st.info(f"Archivo multimedia detectado pero no se puede visualizar directamente: `{ruta}`")
 
 def pagina_busqueda():
     st.markdown(
@@ -86,24 +63,49 @@ def pagina_busqueda():
 
     if tipo_busqueda == "Texto":
         consulta = st.text_input("Escribe tu consulta aquí:", key="busqueda_texto")
+
         if st.button("🔎 Buscar") and consulta:
-            vector = vectorize_text(consulta)
-            resultados = buscar_similares(vector, "data/processed/embeddings", top_k=10)
-            st.success("Resultados similares:")
-            for nombre, score in resultados:
-                st.markdown(f"📂 **{nombre}** — Similaridad: {score:.3f}")
-                mostrar_resultado(nombre)
+            try:
+                idioma = detect(consulta)
+            except:
+                idioma = "unknown"
+
+            if idioma != "en":
+                try:
+                    consulta_traducida = GoogleTranslator(source='auto', target='en').translate(consulta)
+                    st.info(f"🔄 Consulta traducida automáticamente de **{idioma}** → **en**: `{consulta_traducida}`")
+                except Exception as e:
+                    st.warning("No se pudo traducir la consulta automáticamente. Se usará el texto original.")
+                    consulta_traducida = consulta
+            else:
+                consulta_traducida = consulta
+
+            vector = vectorize_text(consulta_traducida)
+            resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20)
+            agrupados = clasificar_resultados_por_tipo(resultados)
+
+            for tipo, grupo in agrupados.items():
+                if grupo:
+                    st.subheader(f"📂 Resultados: {tipo.upper()}")
+                    for nombre, score in grupo:
+                        st.markdown(f"`{score:.3f}` — **{nombre}**")
+                        mostrar_resultado(nombre)
 
     else:
         imagen = st.file_uploader("Sube una imagen para buscar contenido relacionado", type=["jpg", "jpeg", "png"])
         if imagen:
             st.image(Image.open(imagen), caption="Imagen cargada", use_column_width=True)
+
             if st.button("🔎 Buscar"):
                 vector = vectorize_image(imagen)
-                resultados = buscar_similares(vector, "data/processed/embeddings", top_k=10)
-                st.success("Resultados similares:")
-                for nombre, score in resultados:
-                    st.markdown(f"📂 **{nombre}** — Similaridad: {score:.3f}")
-                    mostrar_resultado(nombre)
+                resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20)
+                agrupados = clasificar_resultados_por_tipo(resultados)
+
+                for tipo, grupo in agrupados.items():
+                    if grupo:
+                        st.subheader(f"📂 Resultados: {tipo.upper()}")
+                        for nombre, score in grupo:
+                            st.markdown(f"`{score:.3f}` — **{nombre}**")
+                            mostrar_resultado(nombre)
 
     st.markdown('</div>', unsafe_allow_html=True)

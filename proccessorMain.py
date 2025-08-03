@@ -12,7 +12,7 @@ IMAGE_DIRS = [
 
 AUDIO_DIRS = [
     "data/raw/audios/ingles/clips",
-    # "data/raw/audios/espanol/clips"
+    "data/raw/audios/espanol/clips"
 ]
 
 FRAMES_OUTPUT = "data/processed/frames"
