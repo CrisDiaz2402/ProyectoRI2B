@@ -5,7 +5,7 @@ import whisper
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 # ============================
-# 📌 FRAMES: Extracción de video
+# 📌 FRAMES: Extracción de video clips
 # ============================
 
 def extract_frames(video_path, output_dir, frame_interval=30):
