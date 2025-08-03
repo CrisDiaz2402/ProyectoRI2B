@@ -1,1 +1,45 @@
-\.venv
+# Entorno virtual
+.venv/
+env/
+venv/
+
+# Archivos/datasets grandes o sin procesar
+data/
+raw.zip
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Caché de IPython/Jupyter/Colab
+.ipynb_checkpoints/
+*.ipynb~
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Archivos de configuración personales
+*.env
+.env.*
+*.secret
+
+# VSCode
+.vscode/
+
+# Pytest, coverage
+.cache/
+.coverage
+htmlcov/
+pytest_cache/
+
+# Archivos compilados de Cython, C, etc.
+build/
+dist/
+*.egg-info/

@@ -1,6 +1,7 @@
-def mostrar_feedback():
-    import streamlit as st
-    st.header("⭐ Feedback del Usuario")
+# app/feedback.py
+import streamlit as st
 
-    # Aquí mostrarás lo que el usuario ha marcado con likes, estrellas, clics
-    # Y puedes agregar una tabla con su historial
+def pagina_feedback():
+    st.title("📝 Feedback del Usuario")
+    st.markdown("Aquí podrás dejar tus comentarios o calificar los resultados obtenidos.")
+    st.info("Módulo de retroalimentación próximamente disponible.")
