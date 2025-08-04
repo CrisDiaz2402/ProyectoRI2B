@@ -1,3 +1,38 @@
+def cargar_ground_truth(consulta):
+    """
+    Busca el ground truth para la consulta dada en un archivo groundtruth.json.
+    El archivo debe tener formato: {"consulta1": ["id1", "id2"], ...}
+    """
+    ruta = os.path.join(os.path.dirname(__file__), '../data/processed/feedback/groundtruth.json')
+    if os.path.exists(ruta):
+        with open(ruta, 'r', encoding='utf-8') as f:
+            gt_dict = json.load(f)
+        # Busca por consulta exacta (puedes mejorar con normalización o similaridad)
+        return gt_dict.get(consulta, [])
+    return []
+
+def guardar_resultado_busqueda(retrieved, consulta=None):
+    """
+    Guarda los resultados de la búsqueda y el ground truth (si existe) en un archivo JSON para evaluación.
+    retrieved: lista de nombres/IDs recuperados
+    consulta: texto de la consulta (opcional, para buscar ground truth)
+    """
+    relevant = cargar_ground_truth(consulta) if consulta else []
+    ruta = os.path.join(os.path.dirname(__file__), '../data/processed/feedback/resultados_groundtruth.json')
+    # Crear el directorio si no existe
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    if os.path.exists(ruta):
+        try:
+            with open(ruta, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            data = []
+    else:
+        data = []
+    data.append({"retrieved": retrieved, "relevant": relevant, "consulta": consulta})
+    with open(ruta, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+import json
 import streamlit as st
 from PIL import Image
 from app.vectorizer import vectorize_text, vectorize_image
@@ -156,6 +191,11 @@ def pagina_busqueda():
             st.session_state['tipo_busqueda'] = 'Texto'
             st.session_state['consulta_actual'] = consulta
             mostrar_resultados = True
+
+            # Guardar resultados para evaluación automática
+            nombres_resultados = [nombre for nombre, _ in resultados]
+            # Si tienes ground truth para la consulta, ponlo aquí. Si no, se guarda vacío.
+            guardar_resultado_busqueda(nombres_resultados, consulta=consulta)
         elif st.session_state['resultados_busqueda'] is not None and st.session_state['tipo_busqueda'] == 'Texto':
             agrupados = st.session_state['agrupados_busqueda']
             mostrar_resultados = True
@@ -175,6 +215,10 @@ def pagina_busqueda():
                 st.session_state['tipo_busqueda'] = 'Imagen'
                 st.session_state['consulta_actual'] = ''
                 mostrar_resultados = True
+
+                # Guardar resultados para evaluación automática
+                nombres_resultados = [nombre for nombre, _ in resultados]
+                guardar_resultado_busqueda(nombres_resultados, consulta=None)
             elif st.session_state['resultados_busqueda'] is not None and st.session_state['tipo_busqueda'] == 'Imagen':
                 agrupados = st.session_state['agrupados_busqueda']
                 mostrar_resultados = True
