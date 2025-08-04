@@ -34,7 +34,6 @@ pagina = st.sidebar.selectbox("📂 Navegación", [
     "Inicio",
     "Búsqueda Multimodal",
     "Evaluación",
-    "Feedback"
 ])
 
 # Cargar la página seleccionada
