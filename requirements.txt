@@ -10,6 +10,7 @@ clip                      1.0
 colorama                  0.4.6
 ddgs                      9.5.1
 decorator                 5.2.1
+deep-translator           1.11.4
 filelock                  3.18.0
 fsspec                    2025.7.0
 ftfy                      6.3.1
@@ -23,6 +24,7 @@ joblib                    1.5.1
 jsonschema                4.25.0
 jsonschema-specifications 2025.4.1
 kagglehub                 0.3.12
+langdetect                1.0.9
 llvmlite                  0.44.0
 lxml                      6.0.0
 MarkupSafe                3.0.2
