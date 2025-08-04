@@ -1,6 +1,5 @@
 # app/evaluation.py
 import streamlit as st
-
 import json
 import os
 import numpy as np
@@ -58,20 +57,27 @@ def mrr(results):
     return np.mean(rr) if rr else 0
 
 def calcular_ctr(feedback):
-    # feedback: lista de dicts con 'click' (bool/int)
+    """
+    feedback: dict con formato {
+        item_id: {"likes": int, "dislikes": int, "clics": int, "estrellas": list},
+        ...
+    }
+    Calcula CTR como (total likes + total clics) / total items con feedback.
+    """
     if not feedback:
         return 0
-    total = len(feedback)
-    clicks = sum(1 for f in feedback if f.get('like', 0) or f.get('click', 0))
-    return clicks / total if total else 0
+    total_items = len(feedback)
+    total_interactions = 0
+    for v in feedback.values():
+        total_interactions += v.get("likes", 0) + v.get("clics", 0)
+    return total_interactions / total_items if total_items else 0
 
 def cargar_feedback():
-    ruta = os.path.join(os.path.dirname(__file__), '../data/processed/feedback/feedback.json')
+    ruta = os.path.join(os.path.dirname(__file__), '../data/processed/feedback.json')
     if os.path.exists(ruta):
         with open(ruta, 'r', encoding='utf-8') as f:
             return json.load(f)
-    return []
-
+    return {}
 
 def cargar_resultados_reales():
     """
@@ -93,7 +99,6 @@ def pagina_evaluacion():
     st.title("📈 Evaluación del Sistema")
     st.markdown("Métricas y análisis de rendimiento del buscador.")
 
-    # Intentar cargar resultados reales
     resultados_reales = cargar_resultados_reales()
     if resultados_reales:
         st.success("Mostrando métricas calculadas con resultados reales.")
