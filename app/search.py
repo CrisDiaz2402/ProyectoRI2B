@@ -184,18 +184,20 @@ def pagina_busqueda():
             st.image(Image.open(imagen), caption="Imagen cargada", use_column_width=True)
             descripcion = st.text_input("Describe esta imagen para la evaluación (obligatorio)", key="desc_imagen")
 
-            if st.button("🔎 Buscar") and descripcion.strip():
-                vector = vectorize_image(imagen)
-                resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20)
-                agrupados = clasificar_resultados_por_tipo(resultados)
+            buscar_key = f"buscar_imagen_{descripcion.strip()}"
+            if st.button("🔎 Buscar", key=buscar_key):
+                if descripcion.strip():
+                    vector = vectorize_image(imagen)
+                    resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20)
+                    agrupados = clasificar_resultados_por_tipo(resultados)
 
-                st.session_state['resultados_busqueda'] = resultados
-                st.session_state['agrupados_busqueda'] = agrupados
-                st.session_state['tipo_busqueda'] = 'Imagen'
-                st.session_state['consulta_actual'] = descripcion
-                mostrar_resultados = True
-            elif st.button("🔎 Buscar"):
-                st.warning("Por favor, ingresa una descripción para la imagen para continuar.")
+                    st.session_state['resultados_busqueda'] = resultados
+                    st.session_state['agrupados_busqueda'] = agrupados
+                    st.session_state['tipo_busqueda'] = 'Imagen'
+                    st.session_state['consulta_actual'] = descripcion
+                    mostrar_resultados = True
+                else:
+                    st.warning("Por favor, ingresa una descripción para la imagen para continuar.")
         elif st.session_state['resultados_busqueda'] is not None and st.session_state['tipo_busqueda'] == 'Imagen':
             agrupados = st.session_state['agrupados_busqueda']
             mostrar_resultados = True
