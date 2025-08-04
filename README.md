@@ -69,41 +69,9 @@ processed/texts
 
 ----------------Modulo 4 _ parte 1 (Ranking por similitud)---------------
 para eso se utiliza utils.py que tiene el calculo del ranking y en search.py esta la interfaz y muestra los resultados, para probar se debe ejecutar: 
-(.venv) C:\Users\USER\Desktop\ProyectoRI2B> streamlit run main.py y en el boton deslegable de la barra lateral escoger la segunda opcion (busqueda multimodal) actualmente esta muy flojo porque solo se esocgio 10 para procesar y vectorizar, pero pruebenle con una imagen de gato y en texto no funciona bien. 
-segun chatgpt es por esto: 
-El problema que estás enfrentando ocurre porque los resultados devueltos por el ranking de similitud no están correctamente vinculados con sus archivos multimedia originales (imagen, audio, video o texto). Actualmente, solo tienes los nombres base de los archivos vectorizados (`video1`, `gatos corriendo_0`, etc.), pero no conoces su extensión ni su ubicación original, por lo que no puedes mostrarlos correctamente.
+(.venv) C:\Users\USER\Desktop\ProyectoRI2B> streamlit run main.py y en el boton deslegable de la barra lateral escoger la segunda opcion (busqueda multimodal) 
+Se mejoro la busqueda, se implemento traduccion y se modifico para evitar transcripciones vacias o sucias (es decir de audios y videos que notengan nada)
+Ademas se mejoro para que muestre el contenido origian, antes solo mostraba las transcipciones y frames y no lo original. Se implemento metadata.json para mapear lo vectorizado.
 
-### 🔧 Solución: usar `metadata.json` para mapear resultados
-
-Debes crear un archivo `metadata.json` que registre, para cada vector, la ruta al archivo original (imagen, texto, audio o video), por ejemplo:
-
-```json
-{
-  "video100_frame_0000": "data/processed/frames/video100/frame_0000.jpg",
-  "gatos corriendo_0": "data/raw/crawled/gatos corriendo.jpg",
-  "common_voice_en_36530279": "data/processed/transcripts/common_voice_en_36530279.txt",
-  "video1": "data/raw/msrvtt/video1.mp4"
-}
-```
-
-### ✅ Recomendaciones para resolverlo:
-
-1. **Modifica tu script de vectorización** (`vectorize_and_save_*`) para guardar una entrada en `metadata.json` cada vez que guardes un vector.
-
-2. **Carga `metadata.json` en `utils.py` y úsalo para recuperar la ruta del archivo original cuando se muestre un resultado**.
-
-3. **En `search.py`**, dependiendo de la extensión del archivo, muestra:
-
-   * Imágenes (`.jpg`, `.png`)
-   * Texto (`.txt`)
-   * Video (enlace o etiqueta de video si es local)
-   * Audio (`.mp3`, `st.audio()`)
-
----
-
-¿Quieres que te dé el código completo actualizado para:
-
-* Guardar y usar `metadata.json`
-* Mostrar todos los resultados correctamente según tipo multimedia?
-
-Puedo ayudarte a integrar todo paso a paso.
+---------------Modulo 4_ parte 2 (feedback)------------
+se implemento boton de like y dislike y calificacion, esto se almacena en feedback.json. 
