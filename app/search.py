@@ -196,7 +196,10 @@ def pagina_busqueda():
             if st.button("🔎 Buscar", key=buscar_key):
                 if descripcion.strip():
                     vector = vectorize_image(imagen)
-                    resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20)
+                    # Calcular histograma de la imagen de consulta
+                    from app.utils import calcular_histograma_imagen
+                    histograma = calcular_histograma_imagen(imagen)
+                    resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20, histograma_consulta=histograma)
                     agrupados = clasificar_resultados_por_tipo(resultados)
 
                     st.session_state['resultados_busqueda'] = resultados

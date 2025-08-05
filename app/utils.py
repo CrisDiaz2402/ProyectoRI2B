@@ -1,3 +1,33 @@
+from PIL import Image
+def calcular_histograma_imagen(imagen, bins=256):
+    """
+    Calcula un histograma normalizado de una imagen PIL.Image, ruta de imagen o archivo subido (Streamlit UploadedFile).
+    Devuelve un vector 1D concatenando los histogramas de cada canal.
+    """
+    import io
+    import numpy as np
+    # Si es UploadedFile de Streamlit
+    if hasattr(imagen, 'read') and not isinstance(imagen, str):
+        # Resetear el puntero al inicio para asegurarse de que se puede leer
+        imagen.seek(0)
+        # Lee el buffer una sola vez y lo reutiliza
+        contenido = imagen.read()
+        buffer = io.BytesIO(contenido)
+        imagen_pil = Image.open(buffer)
+        imagen_pil.load()  # fuerza la carga
+        imagen = imagen_pil
+    elif isinstance(imagen, str):
+        imagen = Image.open(imagen)
+    # Si es PIL.Image
+    if imagen.mode != 'RGB':
+        imagen = imagen.convert('RGB')
+    arr = np.array(imagen)
+    hist = []
+    for i in range(3):  # R, G, B
+        h, _ = np.histogram(arr[..., i], bins=bins, range=(0, 256), density=True)
+        hist.append(h)
+    hist = np.concatenate(hist)
+    return hist.astype(np.float32)
 import numpy as np
 import os
 import json
@@ -19,9 +49,10 @@ def cargar_vectores(embedding_dir):
                 vectores.append((nombre, vector))
     return vectores
 
-def buscar_similares(vector_consulta, embedding_dir, top_k=10):
+def buscar_similares(vector_consulta, embedding_dir, top_k=10, histograma_consulta=None):
     """
-    Retorna los top_k vectores más similares al vector de consulta usando similitud coseno.
+    Retorna los top_k vectores más similares al vector de consulta usando similitud coseno y, para imágenes, también similitud de histogramas.
+    Si se proporciona histograma_consulta, se compara con los histogramas de la base para imágenes.
     """
     vectores = cargar_vectores(embedding_dir)
     if not vectores:
@@ -34,26 +65,69 @@ def buscar_similares(vector_consulta, embedding_dir, top_k=10):
     # Pre-filtrado: solo nombres con metadata válida
     nombres_validos = []
     similitudes_validas = []
+    rutas_validas = []
     for i, nombre in enumerate(nombres):
         meta = get_original_path(nombre)
         if meta is not None and meta.get("path"):
             nombres_validos.append(nombre)
             similitudes_validas.append(similitudes[i])
+            rutas_validas.append(meta.get("path"))
     if not nombres_validos:
         return []
 
+    # --- Similitud de histogramas para imágenes ---
+    def cargar_histograma(nombre):
+        # Busca histograma por nombre base en data/processed/histograms
+        hist_path = os.path.join("data/processed/histograms", nombre + ".npy")
+        if os.path.exists(hist_path):
+            return np.load(hist_path)
+        return None
+
+    def calcular_similitud_histogramas(hist1, hist2):
+        # Usa correlación normalizada (puedes cambiar a otra métrica si prefieres)
+        if hist1 is None or hist2 is None:
+            return 0.0
+        # Normaliza
+        hist1 = hist1.astype(np.float32)
+        hist2 = hist2.astype(np.float32)
+        if np.linalg.norm(hist1) == 0 or np.linalg.norm(hist2) == 0:
+            return 0.0
+        return float(np.dot(hist1, hist2) / (np.linalg.norm(hist1) * np.linalg.norm(hist2)))
+
     # Penalización por metadata incompleta
     penalizaciones = []
-    for nombre in nombres_validos:
+    scores_hist = []
+    for idx, nombre in enumerate(nombres_validos):
         meta = get_original_path(nombre)
         penalizacion = 0.0
         if not meta.get("metadata") or len(meta.get("metadata", {})) < 1:
             penalizacion += 0.10  # penaliza si no hay metadata
-        # Puedes agregar más penalizaciones aquí (ej: idioma, duración, etc)
         penalizaciones.append(penalizacion)
 
-    # Ajuste de score
-    scores_ajustados = [s - p for s, p in zip(similitudes_validas, penalizaciones)]
+        # Si es imagen, calcula similitud de histogramas
+        ruta = rutas_validas[idx].lower()
+        if ruta.endswith(('.jpg', '.jpeg', '.png')):
+            hist_base = cargar_histograma(nombre)
+            if histograma_consulta is not None:
+                score_hist = calcular_similitud_histogramas(histograma_consulta, hist_base)
+            else:
+                score_hist = 0.0
+            scores_hist.append(score_hist)
+        else:
+            scores_hist.append(0.0)
+
+    # Combina score de vectores y de histogramas (para imágenes)
+    alpha = 0.8  # peso para similitud de vectores
+    beta = 0.2   # peso para similitud de histogramas
+    scores_ajustados = []
+    for i, nombre in enumerate(nombres_validos):
+        ruta = rutas_validas[i].lower()
+        if ruta.endswith(('.jpg', '.jpeg', '.png')):
+            score = alpha * similitudes_validas[i] + beta * scores_hist[i] - penalizaciones[i]
+        else:
+            score = similitudes_validas[i] - penalizaciones[i]
+        scores_ajustados.append(score)
+
     # Ranking por score ajustado
     indices = np.argsort(scores_ajustados)[::-1][:top_k]
     resultados = [(nombres_validos[i], scores_ajustados[i]) for i in indices]
