@@ -150,6 +150,8 @@ def pagina_busqueda():
         st.session_state['tipo_busqueda'] = None
     if 'consulta_actual' not in st.session_state:
         st.session_state['consulta_actual'] = ''
+    if 'imagen_subida' not in st.session_state:
+        st.session_state['imagen_subida'] = None
 
     mostrar_resultados = False
 
@@ -187,18 +189,41 @@ def pagina_busqueda():
             mostrar_resultados = True
 
     else:
-        imagen = st.file_uploader("Sube una imagen para buscar contenido relacionado", type=["jpg", "jpeg", "png"])
-        if imagen:
-            st.image(Image.open(imagen), caption="Imagen cargada", use_column_width=True)
+        # Mantener la imagen en session_state para evitar pérdida al interactuar con botones
+        if 'imagen_subida' not in st.session_state:
+            st.session_state['imagen_subida'] = None
+        
+        imagen = st.file_uploader("Sube una imagen para buscar contenido relacionado", type=["jpg", "jpeg", "png"], key="uploader_imagen")
+        
+        # Actualizar session_state solo si se sube una nueva imagen
+        if imagen is not None:
+            st.session_state['imagen_subida'] = imagen
+        
+        # Usar la imagen del session_state si existe
+        imagen_actual = st.session_state['imagen_subida']
+        
+        if imagen_actual:
+            col_img, col_clear = st.columns([4, 1])
+            with col_img:
+                st.image(Image.open(imagen_actual), caption="Imagen cargada", use_column_width=True)
+            with col_clear:
+                if st.button("🗑️ Limpiar imagen", key="clear_image_btn"):
+                    st.session_state['imagen_subida'] = None
+                    st.session_state['resultados_busqueda'] = None
+                    st.session_state['agrupados_busqueda'] = None
+                    st.session_state['tipo_busqueda'] = None
+                    st.session_state['consulta_actual'] = ''
+                    st.rerun()
+            
             descripcion = st.text_input("Describe esta imagen para la evaluación (obligatorio)", key="desc_imagen")
 
-            buscar_key = f"buscar_imagen_{descripcion.strip()}"
-            if st.button("🔎 Buscar", key=buscar_key):
+            # Key fijo para el botón de búsqueda para evitar problemas de estado
+            if st.button("🔎 Buscar", key="buscar_imagen_btn"):
                 if descripcion.strip():
-                    vector = vectorize_image(imagen)
+                    vector = vectorize_image(imagen_actual)
                     # Calcular histograma de la imagen de consulta
                     from app.utils import calcular_histograma_imagen
-                    histograma = calcular_histograma_imagen(imagen)
+                    histograma = calcular_histograma_imagen(imagen_actual)
                     resultados = buscar_similares(vector, "data/processed/embeddings", top_k=20, histograma_consulta=histograma)
                     agrupados = clasificar_resultados_por_tipo(resultados)
 
@@ -209,8 +234,9 @@ def pagina_busqueda():
                     mostrar_resultados = True
                 else:
                     st.warning("Por favor, ingresa una descripción para la imagen para continuar.")
-        elif st.session_state['resultados_busqueda'] is not None and st.session_state['tipo_busqueda'] == 'Imagen':
-            agrupados = st.session_state['agrupados_busqueda']
+        
+        # Mostrar resultados de imagen incluso si la imagen se perdió del estado
+        if st.session_state['resultados_busqueda'] is not None and st.session_state['tipo_busqueda'] == 'Imagen':
             mostrar_resultados = True
 
     # Mostrar resultados y formulario de relevancia manual
