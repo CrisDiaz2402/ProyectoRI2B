@@ -32,9 +32,17 @@ def guardar_resultado_manual(retrieved, relevant, consulta):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # --- Mostrar resultado multimedia ---
-def mostrar_resultado(nombre_vector):
-    ruta = get_original_path(nombre_vector)
-    if not ruta or not os.path.exists(ruta):
+def mostrar_resultado(nombre_vector, meta):
+    # meta puede ser None si no se encontró en metadata
+    if not meta or 'path' not in meta or not meta['path']:
+        st.warning(f"No se encontró el archivo original para: {nombre_vector}")
+        return
+
+    ruta = meta['path']
+    if not isinstance(ruta, str):
+        st.warning(f"Ruta inválida para: {nombre_vector}")
+        return
+    if not os.path.exists(ruta):
         st.warning(f"No se encontró el archivo original para: {nombre_vector}")
         return
 
@@ -209,16 +217,20 @@ def pagina_busqueda():
                 st.subheader(f"📂 Resultados: {tipo.upper()}")
                 relevantes_usuario = []
 
-                for nombre, score in grupo:
+                for nombre, score, meta in grupo:
+                    # Mostrar detalles enriquecidos de la metadata si existen
+                    detalles = meta.get("detalles", "") if meta else ""
                     st.markdown(f"{score:.3f} — **{nombre}**")
-                    mostrar_resultado(nombre)
+                    if detalles:
+                        st.info(f"**Detalles metadata:** {detalles}")
+                    mostrar_resultado(nombre, meta)
                     marcado = st.checkbox(f"Marcar como relevante: {nombre}", key=f"relevante_{nombre}")
                     if marcado:
                         relevantes_usuario.append(nombre)
 
                 boton_key = f"guardar_gt_{tipo}_{st.session_state['consulta_actual'] or tipo}"
                 if st.button(f"Guardar ground truth para consulta '{st.session_state['consulta_actual'] or tipo}'", key=boton_key):
-                    retrieved = [nombre for nombre, _ in grupo]
+                    retrieved = [nombre for nombre, score, meta in grupo]
                     relevant = relevantes_usuario
                     consulta = st.session_state['consulta_actual'] or "manual_" + tipo
                     guardar_resultado_manual(retrieved, relevant, consulta)

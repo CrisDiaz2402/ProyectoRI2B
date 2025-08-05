@@ -75,3 +75,32 @@ Ademas se mejoro para que muestre el contenido origian, antes solo mostraba las 
 
 ---------------Modulo 4_ parte 2 (feedback)------------
 se implemento boton de like y dislike y calificacion, esto se almacena en feedback.json. 
+
+---------------Para utilizar metadata real--------------------
+la metadata real se extrae ejecutando "metadata_extractor.py", esta extrae la metadata de los primeros 10 archivos de todas las carpetas de raw excepto youtube8m, y despues se utiliza en utils.py para mejorar el algoritmo de similitud
+
+
+-----------youtube8m es ocpional ------------------
+
+En el contexto de tu proyecto, la data de YouTube8M es opcional y depende de los objetivos y el alcance que quieras darle a tu plataforma.
+
+¿Dónde se podría usar YouTube8M en tu proyecto?
+YouTube8M es un dataset masivo de videos con features pre-extraídas y etiquetas, pensado para tareas de clasificación y recuperación de videos a gran escala. En tu plataforma, podrías usarlo en:
+
+Procesamiento multimedia (Módulo 2):
+
+Si quieres trabajar con videos reales a gran escala, puedes usar los TFRecords de YouTube8M como fuente de datos de video.
+Puedes extraer features adicionales, comparar tus métodos de extracción con los features de YouTube8M, o simplemente usar los features ya extraídos para pruebas.
+Vectorización y ranking (Módulo 3 y 4):
+
+Puedes usar los embeddings (features) de YouTube8M directamente para pruebas de ranking y búsqueda de videos por similitud.
+También podrías comparar los resultados de tu vectorización (CLIP, BLIP) con los embeddings de YouTube8M.
+Evaluación y métricas:
+
+Si incluyes videos de YouTube8M, puedes evaluar tu sistema con un dataset estándar y comparar tus resultados con benchmarks de la literatura.
+¿Es necesaria la data de YouTube8M?
+No es estrictamente necesaria para cumplir los objetivos mínimos del caso de estudio, ya que puedes trabajar solo con MSR-VTT, Flickr y tus propios datos.
+Es útil si quieres escalar tu plataforma, comparar con estándares internacionales, o demostrar robustez en datasets grandes y variados.
+Resumen
+Puedes hacer todo el proyecto sin YouTube8M usando solo MSR-VTT y Flickr.
+Usa YouTube8M si quieres trabajar con un dataset de videos mucho más grande, probar tu sistema a escala, o comparar con otros trabajos académicos.
