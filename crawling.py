@@ -3,7 +3,7 @@ import os
 import requests
 from tqdm import tqdm
 
-def buscar_y_descargar_imagenes_ddgs(query, max_images=10, carpeta_destino="data/raw/crawled"):
+def buscar_y_descargar_imagenes_ddgs(query, max_images=10, carpeta_destino="data/dbtest/imagenes"):
     print(f"Buscando imágenes para: {query}")
     os.makedirs(carpeta_destino, exist_ok=True)
 
@@ -24,4 +24,4 @@ def buscar_y_descargar_imagenes_ddgs(query, max_images=10, carpeta_destino="data
     print("✅ Descarga completada.")
 
 if __name__ == "__main__":
-    buscar_y_descargar_imagenes_ddgs("gatos corriendo", max_images=5)
+    buscar_y_descargar_imagenes_ddgs("shakira", max_images=5)

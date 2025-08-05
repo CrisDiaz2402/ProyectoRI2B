@@ -32,7 +32,7 @@ def guardar_resultado_manual(retrieved, relevant, consulta):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # --- Mostrar resultado multimedia ---
-def mostrar_resultado(nombre_vector, meta):
+def mostrar_resultado(nombre_vector, meta, unique_id=None):
     # meta puede ser None si no se encontró en metadata
     if not meta or 'path' not in meta or not meta['path']:
         st.warning(f"No se encontró el archivo original para: {nombre_vector}")
@@ -69,17 +69,23 @@ def mostrar_resultado(nombre_vector, meta):
         st.session_state[feedback_key] = obtener_feedback(nombre_vector)
     feedback = st.session_state[feedback_key]
 
+    # Crear identificador único para los botones
+    if unique_id is not None:
+        button_suffix = f"_{unique_id}"
+    else:
+        button_suffix = ""
+
     col1, col1b, col2, col2b, col3, col4 = st.columns([2, 1, 2, 1, 3, 2])
 
     with col1:
-        if st.button(f"👍 Like ({feedback['likes']})", key=f"like_{nombre_vector}"):
+        if st.button(f"👍 Like ({feedback['likes']})", key=f"like_{nombre_vector}{button_suffix}"):
             registrar_interaccion(nombre_vector, "like")
             feedback["likes"] += 1
             st.session_state[feedback_key] = feedback.copy()
             st.success("¡Gracias por tu like!")
 
     with col1b:
-        if st.button("🗑️", key=f"del_like_{nombre_vector}"):
+        if st.button("🗑️", key=f"del_like_{nombre_vector}{button_suffix}"):
             eliminar_interaccion(nombre_vector, "like")
             if feedback["likes"] > 0:
                 feedback["likes"] -= 1
@@ -87,7 +93,7 @@ def mostrar_resultado(nombre_vector, meta):
             st.info("Like eliminado.")
 
     with col2:
-        if st.button(f"👎 Dislike ({feedback['dislikes']})", key=f"dislike_{nombre_vector}"):
+        if st.button(f"👎 Dislike ({feedback['dislikes']})", key=f"dislike_{nombre_vector}{button_suffix}"):
             registrar_interaccion(nombre_vector, "dislike")
             registrar_estrellas(nombre_vector, 1)
             feedback["dislikes"] += 1
@@ -95,7 +101,7 @@ def mostrar_resultado(nombre_vector, meta):
             st.warning("Dislike registrado.")
 
     with col2b:
-        if st.button("🗑️", key=f"del_dislike_{nombre_vector}"):
+        if st.button("🗑️", key=f"del_dislike_{nombre_vector}{button_suffix}"):
             eliminar_interaccion(nombre_vector, "dislike")
             if feedback["dislikes"] > 0:
                 feedback["dislikes"] -= 1
@@ -105,9 +111,9 @@ def mostrar_resultado(nombre_vector, meta):
     with col3:
         if feedback["promedio_estrellas"] is not None:
             st.write(f"⭐ Promedio: {feedback['promedio_estrellas']} ({feedback['num_estrellas']} votos)")
-        estrellas = st.slider("Califica este resultado:", 1, 5, 3, key=f"slider_{nombre_vector}")
+        estrellas = st.slider("Califica este resultado:", 1, 5, 3, key=f"slider_{nombre_vector}{button_suffix}")
     with col4:
-        if st.button("Enviar calificación", key=f"rate_{nombre_vector}"):
+        if st.button("Enviar calificación", key=f"rate_{nombre_vector}{button_suffix}"):
             registrar_estrellas(nombre_vector, estrellas)
             feedback = obtener_feedback(nombre_vector)
             st.session_state[feedback_key] = feedback.copy()
@@ -246,7 +252,7 @@ def pagina_busqueda():
                 st.subheader(f"📂 Resultados: {tipo.upper()}")
                 relevantes_usuario = []
 
-                for nombre, score, meta in grupo:
+                for idx, (nombre, score, meta) in enumerate(grupo):
                     # Mostrar detalles enriquecidos de la metadata si existen
                     detalles = meta.get("detalles", "") if meta else ""
                     bonus = meta.get("bonus_feedback", 0.0) if meta else 0.0
@@ -255,8 +261,8 @@ def pagina_busqueda():
                     st.caption(f"Bonus feedback: {bonus:.3f} | Feedback key usada: {feedback_key}")
                     if detalles:
                         st.info(f"**Detalles metadata:** {detalles}")
-                    mostrar_resultado(nombre, meta)
-                    marcado = st.checkbox(f"Marcar como relevante: {nombre}", key=f"relevante_{nombre}")
+                    mostrar_resultado(nombre, meta, unique_id=idx)
+                    marcado = st.checkbox(f"Marcar como relevante: {nombre}", key=f"relevante_{nombre}_{idx}")
                     if marcado:
                         relevantes_usuario.append(nombre)
 

@@ -46,10 +46,6 @@ def vectorize_and_save_images(image_dir, output_dir, max_files=None):
         for file in sorted(files):
             if file.lower().endswith((".jpg", ".jpeg", ".png")):
                 image_paths.append(os.path.join(root, file))
-            if max_files is not None and len(image_paths) >= max_files:
-                break
-        if max_files is not None and len(image_paths) >= max_files:
-            break
 
     for image_path in image_paths:
         vector = vectorize_image(image_path)
@@ -66,7 +62,7 @@ def vectorize_and_save_images(image_dir, output_dir, max_files=None):
             try:
                 idx = path_parts.index("frames")
                 video_folder = path_parts[idx + 1]  # nombre del video sin extensión
-                video_dirs = ["data/raw/msrvtt"]  # otros posibles folders de videos
+                video_dirs = ["data/dbtest/videos"]  # otros posibles folders de videos
 
                 for base_dir in video_dirs:
                     for ext in [".mp4", ".webm", ".mkv"]:
@@ -91,8 +87,6 @@ def vectorize_and_save_texts(text_dir, output_dir, max_files=None):
     os.makedirs(output_dir, exist_ok=True)
     files = [f for f in os.listdir(text_dir) if f.endswith(".txt")]
     files = sorted(files)
-    if max_files is not None:
-        files = files[:max_files]
 
     for file in files:
         text_path = os.path.join(text_dir, file)
@@ -112,9 +106,8 @@ def vectorize_and_save_texts(text_dir, output_dir, max_files=None):
         # ✅ Buscar archivo original (audio o video) a partir del nombre base
         original_media_extensions = [".mp4", ".webm", ".mkv", ".mp3", ".wav"]
         media_base_dirs = [
-            "data/raw/msrvtt",                      # videos
-            "data/raw/audios/ingles/clips",         # audios inglés
-            "data/raw/audios/espanol/clips"         # audios español
+            "data/dbtest/videos",                      # videos
+            "data/dbtest/audios"                       # audios 
         ]
         original_path = None
         for base_dir in media_base_dirs:

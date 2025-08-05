@@ -6,7 +6,7 @@ from mutagen import File as AudioFile
 import ffmpeg
 
 # Carpeta base
-RAW_DIR = 'data/raw'
+RAW_DIR = 'data/dbtest'
 OUTPUT_PATH = 'data/processed/metadata-real.json'
 
 # Tipos de archivo
@@ -67,12 +67,11 @@ def process_files():
     results = {}
     for folder in os.listdir(RAW_DIR):
         folder_path = os.path.join(RAW_DIR, folder)
-        if not os.path.isdir(folder_path) or folder in ['youtube8m', 'audios']:
+        if not os.path.isdir(folder_path) or folder in ['youtube8m']:
             continue
 
         results[folder] = []
         files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-        files = files[:10]  # Solo los primeros 10
 
         for file in files:
             path = os.path.join(folder_path, file)
