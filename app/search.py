@@ -220,7 +220,10 @@ def pagina_busqueda():
                 for nombre, score, meta in grupo:
                     # Mostrar detalles enriquecidos de la metadata si existen
                     detalles = meta.get("detalles", "") if meta else ""
-                    st.markdown(f"{score:.3f} — **{nombre}**")
+                    bonus = meta.get("bonus_feedback", 0.0) if meta else 0.0
+                    feedback_key = meta.get("feedback_key", nombre) if meta else nombre
+                    st.markdown(f"{score:.3f} — **{nombre}**  ")
+                    st.caption(f"Bonus feedback: {bonus:.3f} | Feedback key usada: {feedback_key}")
                     if detalles:
                         st.info(f"**Detalles metadata:** {detalles}")
                     mostrar_resultado(nombre, meta)
